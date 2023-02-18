@@ -7,11 +7,7 @@ var cors = require('cors');
 
 var db = require('./db');
 
-// default endpoint
-var indexRouter = require('./routes/index');
-// var usersRouter = require('./routes/users');
-
-// my custom endpoint
+// endpoint
 const authRouter = require('./app/Auth/router');
 const userRouter = require('./app/User/router');
 
@@ -29,11 +25,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// default route
-app.use('/', indexRouter);
-// app.use('/users', usersRouter);
-
-// my custom route
+// route
 app.use(`${URL}/auth`, authRouter);
 app.use(`${URL}/user`, userRouter);
 
