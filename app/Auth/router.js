@@ -14,7 +14,7 @@ const fileFilter = (req, file, cb) => {
 
 router.post('/signup', multer({ dest: os.tmpdir(), fileFilter }).single('foto'), signUp);
 router.post('/signin', signIn);
-router.patch('/signout', signOut);
+router.post('/signout', signOut);
 router.get('/token', refreshToken);
 
 module.exports = router;

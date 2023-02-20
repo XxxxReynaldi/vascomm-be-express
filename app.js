@@ -7,7 +7,11 @@ var cors = require('cors');
 
 var db = require('./db');
 
-// endpoint
+// default endpoint
+var indexRouter = require('./routes/index');
+// var usersRouter = require('./routes/users');
+
+// my custom endpoint
 const authRouter = require('./app/Auth/router');
 const userRouter = require('./app/User/router');
 
@@ -25,7 +29,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// route
+// default route
+app.use('/', indexRouter);
+// app.use('/users', usersRouter);
+
+// my custom route
 app.use(`${URL}/auth`, authRouter);
 app.use(`${URL}/user`, userRouter);
 
@@ -40,9 +48,15 @@ app.use(function (err, req, res, next) {
 	res.locals.message = err.message;
 	res.locals.error = req.app.get('env') === 'development' ? err : {};
 
+	const msg = err.message;
+	const { errors } = err;
+
+	// const filtered = errors.map(({ message, path }) => ({ message, path }));
+
 	// render the error page
-	res.status(err.status || 500);
-	res.render('error');
+	// res.status(err.status || 500).json({ filtered, errors, msg });
+	res.status(err.status || 500).json({ errors, msg });
+	// res.render('error');
 });
 
 module.exports = app;

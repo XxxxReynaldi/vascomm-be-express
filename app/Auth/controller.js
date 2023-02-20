@@ -11,7 +11,15 @@ module.exports = {
 		try {
 			const { password, confPassword } = req.body;
 			const payload = req.body;
-			if (password !== confPassword) return res.status(400).json({ msg: 'Password dan Confirm Password tidak cocok' });
+
+			if (password !== confPassword)
+				return res.status(400).json({
+					msg: 'Sign up failure',
+					fields: {
+						password: { msg: 'Password not match' },
+						confPassword: { msg: 'Password not match' },
+					},
+				});
 			const salt = await bcrypt.genSalt();
 			const hashPassword = await bcrypt.hash(password, salt);
 
@@ -31,24 +39,34 @@ module.exports = {
 						await user.save();
 						user.password = undefined;
 
-						res.status(201).json({ msg: 'Register Berhasil', data: user });
+						res.status(201).json({ msg: 'Sign Up Success', data: user });
 					} catch (err) {
-						if (err && err.name === 'ValidationError') {
-							return res.status(422).json({
-								error: true,
-								message: err.message,
-								fields: err.errors,
-							});
-						}
+						// if (err && err.name === 'ValidationError') {
+						// 	return res.status(422).json({
+						// 		error: true,
+						// 		message: err.message,
+						// 		fields: err.errors,
+						// 	});
+						// }
 						next(err);
 					}
 				});
 			} else {
-				let user = new User({ ...payload, password: hashPassword, foto: 'default.jpg' });
-				await user.save();
-				user.password = undefined;
-
-				res.status(201).json({ msg: 'Register Berhasil', data: user });
+				try {
+					let user = new User({ ...payload, password: hashPassword, foto: 'default.jpg' });
+					await user.save();
+					user.password = undefined;
+					res.status(201).json({ msg: 'Sign Up Success', data: user });
+				} catch (err) {
+					// if (err && err.name === 'ValidationError') {
+					// 	return res.status(422).json({
+					// 		error: true,
+					// 		message: err.message,
+					// 		fields: err.errors,
+					// 	});
+					// }
+					next(err);
+				}
 			}
 		} catch (err) {
 			next(err);
@@ -59,8 +77,11 @@ module.exports = {
 		try {
 			const { email, password } = req.body;
 			const user = await User.findOne({ where: { email } });
+			if (!user)
+				return res.status(401).json({ msg: 'Sign in failure', fields: { email: { msg: 'Email is not registered' } } });
 			const match = await bcrypt.compare(password, user.password);
-			if (!match) return res.status(400).json({ msg: 'Wrong Password' });
+			if (!match)
+				return res.status(401).json({ msg: 'Sign in failure', fields: { password: { msg: 'Wrong Password' } } });
 
 			const { id, name, role, foto } = user;
 			const userId = id;
@@ -119,15 +140,24 @@ module.exports = {
 	refreshToken: async (req, res, next) => {
 		try {
 			const refreshToken = req.cookies.refreshToken;
-			if (!refreshToken) return res.sendStatus(401);
+			if (!refreshToken)
+				return res.status(401).json({
+					msg: 'Unauthorized',
+				});
 			const user = await User.findOne({
 				where: {
 					refreshToken,
 				},
 			});
-			if (!user) return res.sendStatus(403);
+			if (!user)
+				return res.status(403).json({
+					msg: 'Forbidden',
+				});
 			jwt.verify(refreshToken, config.refreshTokenSecret, (err, decoded) => {
-				if (err) return res.sendStatus(403);
+				if (err)
+					return res.status(403).json({
+						msg: 'Forbidden',
+					});
 				const userId = user.id;
 				const name = user.name;
 				const email = user.email;
